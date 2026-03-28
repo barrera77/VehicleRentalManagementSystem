@@ -2,7 +2,30 @@
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<div class="text-center mt-5">
+
+    <h1 class="display-3 text-primary mb-3">Welcome to Vehicle Rental System</h1>
+    <p class="lead mb-4">
+        Manage your fleet, reservations, customers, and billing all in one place.
+    </p>
+
+    <div class="d-flex justify-content-center gap-3 flex-wrap mb-5">
+        <a asp-controller="Vehicles" asp-action="Index" class="btn btn-lg btn-primary">
+            <i class="bi bi-car-front-fill me-2"></i> Manage Vehicles
+        </a>
+        <a asp-controller="Customers" asp-action="Index" class="btn btn-lg btn-success">
+            <i class="bi bi-people-fill me-2"></i> Manage Customers
+        </a>
+        <a asp-controller="Reservations" asp-action="Index" class="btn btn-lg btn-warning text-dark">
+            <i class="bi bi-journal-check me-2"></i> Manage Reservations
+        </a>
+        <a asp-controller="Billing" asp-action="Index" class="btn btn-lg btn-info text-white">
+            <i class="bi bi-currency-dollar me-2"></i> Billing
+        </a>
+    </div>
+
+    <!-- Replace footer text with a car image or logo -->
+    <div class="mb-5">
+        <img src="~/images/car-logo.png" alt="Vehicle Rental Logo" class="img-fluid" style="max-height:200px;">
+        </div>
+    </div>
