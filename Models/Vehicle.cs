@@ -36,9 +36,6 @@ public partial class Vehicle
 
     public int Mileage { get; set; }
 
-    [Column(TypeName = "decimal(10,2)")]
-    public decimal RatePerDay { get; set; }
-
     [ForeignKey("CategoryId")]
     [InverseProperty("Vehicles")]
     public virtual VehicleCategory Category { get; set; }

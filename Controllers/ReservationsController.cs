@@ -1,5 +1,4 @@
-﻿
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using VehicleRentalManagementSystem.Models;
@@ -19,9 +18,10 @@ namespace VehicleRentalManagementSystem.Controllers
         public async Task<IActionResult> Index()
         {
             var vehicleRentalDBContext = _context.Reservations
-                .Include(r => r.Customer)                
+                .Include(r => r.Customer)
                 .Include(r => r.Vehicle)
-                .ThenInclude(v => v.Category);
+                    .ThenInclude(v => v.Category)
+                .Include(r => r.Billing); // optional: show billing in index if desired
             return View(await vehicleRentalDBContext.ToListAsync());
         }
 
@@ -31,9 +31,10 @@ namespace VehicleRentalManagementSystem.Controllers
             if (id == null) return NotFound();
 
             var reservation = await _context.Reservations
-                .Include(r => r.Customer)                
+                .Include(r => r.Customer)
                 .Include(r => r.Vehicle)
-                .ThenInclude(v => v.Category)
+                    .ThenInclude(v => v.Category)
+                .Include(r => r.Billing) // <-- ADD THIS
                 .FirstOrDefaultAsync(m => m.ReservationId == id);
 
             if (reservation == null) return NotFound();
@@ -59,7 +60,6 @@ namespace VehicleRentalManagementSystem.Controllers
                 _context.Add(reservation);
                 await _context.SaveChangesAsync();
 
-                // Generate billing immediately if reservation is confirmed
                 if (reservation.Status == "Confirmed")
                 {
                     var billing = GenerateBilling(reservation);
@@ -102,7 +102,6 @@ namespace VehicleRentalManagementSystem.Controllers
                     _context.Update(reservation);
                     await _context.SaveChangesAsync();
 
-                    // Handle billing logic
                     var billing = await _context.Billings.FirstOrDefaultAsync(b => b.ReservationId == reservation.ReservationId);
 
                     if (reservation.Status == "Confirmed")
@@ -111,25 +110,20 @@ namespace VehicleRentalManagementSystem.Controllers
                         {
                             var newBilling = GenerateBilling(reservation);
                             _context.Billings.Add(newBilling);
-                            await _context.SaveChangesAsync();
                         }
                         else
                         {
-                            // Optional: recalc billing if needed
                             var updatedBilling = GenerateBilling(reservation);
-                            updatedBilling.BillingId = billing.BillingId; // keep original ID
+                            updatedBilling.BillingId = billing.BillingId;
                             _context.Entry(billing).CurrentValues.SetValues(updatedBilling);
-                            await _context.SaveChangesAsync();
                         }
+                        await _context.SaveChangesAsync();
                     }
-                    else if (reservation.Status == "Cancelled")
+                    else if (reservation.Status == "Cancelled" && billing != null)
                     {
-                        if (billing != null)
-                        {
-                            billing.PaymentStatus = "Cancelled";
-                            _context.Update(billing);
-                            await _context.SaveChangesAsync();
-                        }
+                        billing.PaymentStatus = "Cancelled";
+                        _context.Update(billing);
+                        await _context.SaveChangesAsync();
                     }
                 }
                 catch (DbUpdateConcurrencyException)
@@ -154,6 +148,8 @@ namespace VehicleRentalManagementSystem.Controllers
             var reservation = await _context.Reservations
                 .Include(r => r.Customer)
                 .Include(r => r.Vehicle)
+                    .ThenInclude(v => v.Category)
+                .Include(r => r.Billing) // <-- ADD THIS
                 .FirstOrDefaultAsync(m => m.ReservationId == id);
 
             if (reservation == null) return NotFound();
@@ -171,7 +167,6 @@ namespace VehicleRentalManagementSystem.Controllers
             {
                 _context.Reservations.Remove(reservation);
 
-                // Optional: flag billing as cancelled if deleting reservation
                 var billing = await _context.Billings.FirstOrDefaultAsync(b => b.ReservationId == reservation.ReservationId);
                 if (billing != null)
                 {
@@ -195,8 +190,8 @@ namespace VehicleRentalManagementSystem.Controllers
             int days = (reservation.EndDate - reservation.StartDate).Days + 1;
 
             decimal baseAmount = baseRate * days;
-            decimal taxAmount = baseAmount * 0.13m; // example 13% tax
-            decimal additionalCharges = 0; // can calculate later if needed
+            decimal taxAmount = baseAmount * 0.13m;
+            decimal additionalCharges = 0;
             decimal totalAmount = baseAmount + taxAmount + additionalCharges;
 
             return new Billing
