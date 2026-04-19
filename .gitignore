@@ -39,3 +39,6 @@ obj/
 # Packages
 *.nupkg
 *.nuget/
+
+appsettings.Development.json
+secrets.json

@@ -38,7 +38,7 @@ public partial class Vehicle
 
     [ForeignKey("CategoryId")]
     [InverseProperty("Vehicles")]
-    public virtual VehicleCategory Category { get; set; }
+    public virtual VehicleCategory? Category { get; set; }
 
     [InverseProperty("Vehicle")]
     public virtual ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();

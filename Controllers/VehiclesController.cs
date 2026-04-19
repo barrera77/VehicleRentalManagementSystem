@@ -48,7 +48,8 @@ namespace VehicleRentalManagementSystem.Controllers
         public IActionResult Create()
         {
             ViewData["CategoryId"] = new SelectList(_context.VehicleCategories, "CategoryId", "CategoryName");
-            return View();
+            var vehicle = new Vehicle { Status = "Available" };  
+            return View(vehicle);
         }
 
         // POST: Vehicles/Create

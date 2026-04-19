@@ -11,8 +11,6 @@ namespace VehicleRentalManagementSystem
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-
             // Identity DB (users/login)
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
                 ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -20,8 +18,16 @@ namespace VehicleRentalManagementSystem
                 options.UseSqlServer(connectionString));
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-            builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+            builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
                 .AddEntityFrameworkStores<ApplicationDbContext>();
+
+            // Google Auth
+            builder.Services.AddAuthentication()
+                .AddGoogle(options =>
+                {
+                    options.ClientId = builder.Configuration["Authentication:Google:ClientId"];
+                    options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+                });
 
             // Vehicle Rental DB (your tables)
             var vehicleDbConnection = builder.Configuration.GetConnectionString("VehicleRentalDBContext")
@@ -33,7 +39,6 @@ namespace VehicleRentalManagementSystem
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 app.UseMigrationsEndPoint();
