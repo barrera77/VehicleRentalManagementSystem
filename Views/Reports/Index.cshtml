@@ -1,0 +1,213 @@
+﻿@model VehicleRentalManagementSystem.Models.ReportViewModel
+
+@{
+    ViewData["Title"] = "Reports";
+}
+
+<h1 class="mb-4 text-primary">Reports</h1>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form asp-action="Generate" asp-controller="Reports" method="post">
+
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Report Type</label>
+                    <select name="reportType" id="reportType" class="form-select" onchange="toggleFilters(this.value)">
+                        <option value="">-- Select Report --</option>
+                        <option value="ReservationsByDate" selected="@(Model?.ReportType == "ReservationsByDate")">Reservations by Date Range</option>
+                        <option value="VehiclesByCategory" selected="@(Model?.ReportType == "VehiclesByCategory")">Vehicles by Category</option>
+                        <option value="CustomerActivity" selected="@(Model?.ReportType == "CustomerActivity")">Customer Activity</option>
+                    </select>
+                </div>
+
+                <!-- Date Range filters -->
+                <div class="col-md-2" id="startDateDiv" style="display:none">
+                    <label class="form-label fw-bold">Start Date</label>
+                    <input type="date" name="startDate" class="form-control"
+                           value="@Model?.StartDate?.ToString("yyyy-MM-dd")" />
+                </div>
+
+                <div class="col-md-2" id="endDateDiv" style="display:none">
+                    <label class="form-label fw-bold">End Date</label>
+                    <input type="date" name="endDate" class="form-control"
+                           value="@Model?.EndDate?.ToString("yyyy-MM-dd")" />
+                </div>
+
+                <!-- Category filter -->
+                <div class="col-md-3" id="categoryDiv" style="display:none">
+                    <label class="form-label fw-bold">Category (optional)</label>
+                    <select name="categoryId" class="form-select">
+                        <option value="">All Categories</option>
+                        @if (Model?.Categories != null)
+                        {
+                            @foreach (var cat in Model.Categories)
+                            {
+                                <option value="@cat.CategoryId" selected="@(Model?.CategoryId == cat.CategoryId)">
+                                    @cat.CategoryName
+                                </option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        Generate Report
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- RESULTS -->
+@if (Model?.ReportType == "ReservationsByDate" && Model.Reservations.Any())
+{
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Reservations from @Model.StartDate?.ToString("MMM dd, yyyy") to @Model.EndDate?.ToString("MMM dd, yyyy") — @Model.Reservations.Count result(s)</h5>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Customer</th>
+                        <th>Vehicle</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Status</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model.Reservations)
+                    {
+                        <tr>
+                            <td>@r.ReservationId</td>
+                            <td>@r.Customer.FirstName @r.Customer.LastName</td>
+                            <td>@r.Vehicle.Year @r.Vehicle.Make @r.Vehicle.Model</td>
+                            <td>@r.StartDate.ToString("MMM dd, yyyy")</td>
+                            <td>@r.EndDate.ToString("MMM dd, yyyy")</td>
+                            <td>
+                                <span class="badge @(r.Status == "Completed" ? "bg-success" : r.Status == "Active" ? "bg-primary" : r.Status == "Cancelled" ? "bg-danger" : "bg-warning")">
+                                    @r.Status
+                                </span>
+                            </td>
+                            <td>@(r.Billing != null ? r.Billing.TotalAmount.ToString("C") : "N/A")</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot class="table-light">
+                    <tr>
+                        <td colspan="6" class="text-end fw-bold">Total Revenue:</td>
+                        <td class="fw-bold">@Model.Reservations.Where(r => r.Billing != null).Sum(r => r.Billing.TotalAmount).ToString("C")</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+}
+
+@if (Model?.ReportType == "VehiclesByCategory" && Model.Vehicles.Any())
+{
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Vehicles by Category — @Model.Vehicles.Count result(s)</h5>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Category</th>
+                        <th>Make</th>
+                        <th>Model</th>
+                        <th>Year</th>
+                        <th>License Plate</th>
+                        <th>Status</th>
+                        <th>Daily Rate</th>
+                        <th>Mileage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var v in Model.Vehicles)
+                    {
+                        <tr>
+                            <td>@v.Category.CategoryName</td>
+                            <td>@v.Make</td>
+                            <td>@v.Model</td>
+                            <td>@v.Year</td>
+                            <td>@v.LicensePlate</td>
+                            <td>
+                                <span class="badge @(v.Status == "Available" ? "bg-success" : v.Status == "Rented" ? "bg-primary" : "bg-warning")">
+                                    @v.Status
+                                </span>
+                            </td>
+                            <td>@v.Category.DailyRate.ToString("C")</td>
+                            <td>@v.Mileage.ToString("N0") km</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@if (Model?.ReportType == "CustomerActivity" && Model.Customers.Any())
+{
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Customer Activity — @Model.Customers.Count customer(s)</h5>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Customer</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Total Reservations</th>
+                        <th>Completed</th>
+                        <th>Cancelled</th>
+                        <th>Total Spent</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in Model.Customers)
+                    {
+                        <tr>
+                            <td>@c.FirstName @c.LastName</td>
+                            <td>@c.Email</td>
+                            <td>@c.Phone</td>
+                            <td>@c.Reservations.Count</td>
+                            <td>@c.Reservations.Count(r => r.Status == "Completed")</td>
+                            <td>@c.Reservations.Count(r => r.Status == "Cancelled")</td>
+                            <td>@c.Reservations.Where(r => r.Billing != null).Sum(r => r.Billing.TotalAmount).ToString("C")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@if (Model?.ReportType != null && !Model.Reservations.Any() && !Model.Vehicles.Any() && !Model.Customers.Any())
+{
+    <div class="alert alert-info">No results found for the selected criteria.</div>
+}
+
+@section Scripts {
+    <script>
+        function toggleFilters(value) {
+            document.getElementById('startDateDiv').style.display = value === 'ReservationsByDate' ? 'block' : 'none';
+            document.getElementById('endDateDiv').style.display = value === 'ReservationsByDate' ? 'block' : 'none';
+            document.getElementById('categoryDiv').style.display = value === 'VehiclesByCategory' ? 'block' : 'none';
+        }
+
+        // Restore filters on page load if a report was already generated
+        document.addEventListener('DOMContentLoaded', function () {
+            toggleFilters('@Model?.ReportType');
+        });
+    </script>
+}
